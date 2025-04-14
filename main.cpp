@@ -130,6 +130,14 @@ BOOL CALLBACK DeviceRegisterCallback(LONG lUserID, DWORD dwDataType, void *pOutB
                 memcpy(pSessionKey->sSessionKey, key, strlen(key));
                 
                 std::cout << "Setting session key for device: " << deviceID << std::endl;
+                
+                NET_EHOME_DEV_SESSIONKEY sessionKey = {0};
+                memset(sessionKey.sDeviceID, 0, MAX_DEVICE_ID_LEN);
+                memcpy(sessionKey.sDeviceID, deviceID, strlen(deviceID));
+                memset(sessionKey.sSessionKey, 0, MAX_MASTER_KEY_LEN);
+                memcpy(sessionKey.sSessionKey, key, strlen(key));
+                NET_ECMS_SetDeviceSessionKey(&sessionKey);
+                
                 return TRUE;
             } else {
                 std::cout << "ERROR: No session key found for device ID: " << deviceID << std::endl;
