@@ -1,38 +1,38 @@
 The COM:HCCoreBase ver is 1.0.0.2, 2019_07_24. Async:1.
 version:HCISUPCMS version is 2.5.1.23, 2024_03_11.
-[2025-04-14 18:07:46.354][DBG] CEUserManager::StartWork, In, pUserData[0x0]
-[2025-04-14 18:07:46.354][DBG] CEUserManager::StartWork, CoreBase_CreateThreadPool SUCC, m_hOffThreadPool[-1517255792]
-[2025-04-14 18:07:46.354][DBG] CEUserManager::StartWork, CoreBase_CreateThreadPool SUCC, m_hSetHostThreadPool[-1517255600]
-[2025-04-14 18:07:46.355][DBG] CEUserManager::StartWork, CreateTimerProxy SUCC
-[2025-04-14 18:07:46.355][DBG] CEUserManager::StartWork, SUCC, m_iListenHandle[3], TID[569988992]
-[2025-04-14 18:07:46.355][DBG] CMemoryMgr::CreateMemoryPool, nIndex[14], dwChunkSize[246304], nOnceAlloc[16], nMaxAlloc[20480]
-[2025-04-14 18:07:46.355][DBG] CServerLinkMgr::CServerLinkMgr, CreateMemoryPool SUCC, MemPoolIndex[14]
-[2025-04-14 18:07:46.355][DBG] CMemoryMgr::AllocMemoryPoolByIndex, CMemoryMgr[0xA57ABF50], MemPoolIndex[14], MemPool[0xA5908A90], dwChunkSize[246304]
-[2025-04-14 18:07:46.355][DBG] CMemoryMgr::AllocMemoryPoolByIndex, CMemoryMgr[0xA57ABF50], MemPoolIndex[0], MemPool[0xA5908C20], dwChunkSize[16]
-[2025-04-14 18:07:46.357][DBG] CMemoryMgr::CreateMemoryPool, nIndex[15], dwChunkSize[223224], nOnceAlloc[16], nMaxAlloc[20480]
-[2025-04-14 18:07:46.357][DBG] CHRUDPLinkMgr::CHRUDPLinkMgr, CreateMemoryPool SUCC, m_nClassHRUdpCommandMemPoolIndex[15]
-[2025-04-14 18:07:46.357][DBG] CMemoryMgr::CreateMemoryPool, nIndex[16], dwChunkSize[3728], nOnceAlloc[16], nMaxAlloc[20480]
-[2025-04-14 18:07:46.357][DBG] CHRUDPLinkMgr::CHRUDPLinkMgr, CreateMemoryPool SUCC, MemPoolIndex[16]
-[2025-04-14 18:07:46.357][DBG] CMemoryMgr::AllocMemoryPoolByIndex, CMemoryMgr[0xA57ABF50], MemPoolIndex[15], MemPool[0xA5908F30], dwChunkSize[223224]
-[2025-04-14 18:07:46.358][DBG] CHRUDPLinkMgr::Create, iHRUDPHandle[0]
-[2025-04-14 18:07:46.358][DBG] Interim_HRUDP_Create, SUCC, iHRUDPHandle[0], iAf[2], enumType[0]
-[2025-04-14 18:07:46.360][DBG] [0]CHRUdpCommand::Listen, SUCC, m_wPort[0]
-[2025-04-14 18:07:46.360][DBG] [0]Interim_HRUDP_Listen, Listen SUCC
-[2025-04-14 18:07:46.360][ERR] Interim_SecureCreate, iSecureHandle[0], iAddressType[0], iTransportMode[0]
-[2025-04-14 18:07:46.360][DBG] [0]Interim_SecureServSetRecvFun, SetDataCB SUCC, fnServRecvDataCB[0x2252873C], pUserData[0x1CB92014]
-[2025-04-14 18:07:46.360][DBG] [0]Interim_HRUDP_Bind, SUCC, Addr[0.0.0.0:7660]
-[2025-04-14 18:07:46.360][DBG] [0]Interim_SecureBind, Bind SUCC, Addr[0.0.0.0:7660]
-[2025-04-14 18:07:46.360][DBG] [0]COM_HRUDP_SetSockBuffSize, SetSockBuffSize SUCC, iSndBuffSize[4194304], iRcvBuffSize[4194304]
-[2025-04-14 18:07:46.360][DBG] [0]Interim_SecureSetSockBuffSize, SetSockBuffSize SUCC, iSendBufferSize[4194304], iRecvBufferSize[4194304]
-[2025-04-14 18:07:46.360][DBG] CListenServer::StartServer, CoreBase_CreateServerLink SUCC, ENUM_LINK_TYPE_HRUDP, Addr[:7660], m_iLinkHandle[0]
-[2025-04-14 18:07:46.362][DBG] CCoreGlobalCtrlBase::LoadDSo, HPR_LoadDSo Succ, Path[libcrypto.so], hHandleRet[-1516985200]
-[2025-04-14 18:07:46.363][DBG] CCoreGlobalCtrlBase::LoadDSo, HPR_LoadDSo Succ, Path[libssl.so], hHandleRet[-1516981168]
-[2025-04-14 18:07:46.363][INF] COpenSSLAPI::LoadAPI, libeay, Load Real Path[/lib/x86_64-linux-gnu/libcrypto.so]
-[2025-04-14 18:07:46.363][DBG] COpenSSLAPI::GetOpenSSLVersion, m_fnOpenSSLVersionNum, OpensslVersion[0x30000020]
-[2025-04-14 18:07:46.363][DBG] COpenSSLAPI::LoadAPI, m_dwOpenSSLVeresion[0x30000020]
-[2025-04-14 18:07:46.363][DBG] COpenSSLAPI::IsAllAPILoaded, Function[SSL_library_init] Unload
-[2025-04-14 18:07:46.363][DBG] CSSLTrans::LoadSSLLib, Not All Function Loaded
-[2025-04-14 18:07:46.363][DBG] OpenSSL: Version[OpenSSL 3.0.2 15 Mar 2022]
-[2025-04-14 18:07:46.364][INF] CSSLTrans::SSLCtxInit, dwSSLVersion[6], m_fnTLSServerMethod
-[2025-04-14 18:07:46.367][DBG] CListenServer::StartServer, CoreBase_CreateServerLink SUCC, ENUM_LINK_TYPE_MQTT, Addr[:7660], m_iMqttLinkHandle[1]
-[2025-04-14 18:07:46.367][DBG] NET_ECMS_StartListen, SUCC
+[2025-04-14 18:52:00.907][DBG] CEUserManager::StartWork, In, pUserData[0x0]
+[2025-04-14 18:52:00.907][DBG] CEUserManager::StartWork, CoreBase_CreateThreadPool SUCC, m_hOffThreadPool[387384208]
+[2025-04-14 18:52:00.907][DBG] CEUserManager::StartWork, CoreBase_CreateThreadPool SUCC, m_hSetHostThreadPool[387384400]
+[2025-04-14 18:52:00.908][DBG] CEUserManager::StartWork, CreateTimerProxy SUCC
+[2025-04-14 18:52:00.908][DBG] CEUserManager::StartWork, SUCC, m_iListenHandle[3], TID[142350208]
+[2025-04-14 18:52:00.908][DBG] CMemoryMgr::CreateMemoryPool, nIndex[14], dwChunkSize[246304], nOnceAlloc[16], nMaxAlloc[20480]
+[2025-04-14 18:52:00.908][DBG] CServerLinkMgr::CServerLinkMgr, CreateMemoryPool SUCC, MemPoolIndex[14]
+[2025-04-14 18:52:00.908][DBG] CMemoryMgr::AllocMemoryPoolByIndex, CMemoryMgr[0x17013F50], MemPoolIndex[14], MemPool[0x17170A90], dwChunkSize[246304]
+[2025-04-14 18:52:00.908][DBG] CMemoryMgr::AllocMemoryPoolByIndex, CMemoryMgr[0x17013F50], MemPoolIndex[0], MemPool[0x17170C20], dwChunkSize[16]
+[2025-04-14 18:52:00.908][DBG] CMemoryMgr::CreateMemoryPool, nIndex[15], dwChunkSize[223224], nOnceAlloc[16], nMaxAlloc[20480]
+[2025-04-14 18:52:00.908][DBG] CHRUDPLinkMgr::CHRUDPLinkMgr, CreateMemoryPool SUCC, m_nClassHRUdpCommandMemPoolIndex[15]
+[2025-04-14 18:52:00.908][DBG] CMemoryMgr::CreateMemoryPool, nIndex[16], dwChunkSize[3728], nOnceAlloc[16], nMaxAlloc[20480]
+[2025-04-14 18:52:00.908][DBG] CHRUDPLinkMgr::CHRUDPLinkMgr, CreateMemoryPool SUCC, MemPoolIndex[16]
+[2025-04-14 18:52:00.908][DBG] CMemoryMgr::AllocMemoryPoolByIndex, CMemoryMgr[0x17013F50], MemPoolIndex[15], MemPool[0x17170F30], dwChunkSize[223224]
+[2025-04-14 18:52:00.909][DBG] CHRUDPLinkMgr::Create, iHRUDPHandle[0]
+[2025-04-14 18:52:00.909][DBG] Interim_HRUDP_Create, SUCC, iHRUDPHandle[0], iAf[2], enumType[0]
+[2025-04-14 18:52:00.912][DBG] [0]CHRUdpCommand::Listen, SUCC, m_wPort[0]
+[2025-04-14 18:52:00.912][DBG] [0]Interim_HRUDP_Listen, Listen SUCC
+[2025-04-14 18:52:00.912][ERR] Interim_SecureCreate, iSecureHandle[0], iAddressType[0], iTransportMode[0]
+[2025-04-14 18:52:00.912][DBG] [0]Interim_SecureServSetRecvFun, SetDataCB SUCC, fnServRecvDataCB[0x832873C], pUserData[0x29BB014]
+[2025-04-14 18:52:00.912][DBG] [0]Interim_HRUDP_Bind, SUCC, Addr[0.0.0.0:7660]
+[2025-04-14 18:52:00.912][DBG] [0]Interim_SecureBind, Bind SUCC, Addr[0.0.0.0:7660]
+[2025-04-14 18:52:00.912][DBG] [0]COM_HRUDP_SetSockBuffSize, SetSockBuffSize SUCC, iSndBuffSize[4194304], iRcvBuffSize[4194304]
+[2025-04-14 18:52:00.912][DBG] [0]Interim_SecureSetSockBuffSize, SetSockBuffSize SUCC, iSendBufferSize[4194304], iRecvBufferSize[4194304]
+[2025-04-14 18:52:00.912][DBG] CListenServer::StartServer, CoreBase_CreateServerLink SUCC, ENUM_LINK_TYPE_HRUDP, Addr[:7660], m_iLinkHandle[0]
+[2025-04-14 18:52:00.913][DBG] CCoreGlobalCtrlBase::LoadDSo, HPR_LoadDSo Succ, Path[libcrypto.so], hHandleRet[387654800]
+[2025-04-14 18:52:00.914][DBG] CCoreGlobalCtrlBase::LoadDSo, HPR_LoadDSo Succ, Path[libssl.so], hHandleRet[387658832]
+[2025-04-14 18:52:00.914][INF] COpenSSLAPI::LoadAPI, libeay, Load Real Path[/lib/x86_64-linux-gnu/libcrypto.so]
+[2025-04-14 18:52:00.914][DBG] COpenSSLAPI::GetOpenSSLVersion, m_fnOpenSSLVersionNum, OpensslVersion[0x30000020]
+[2025-04-14 18:52:00.914][DBG] COpenSSLAPI::LoadAPI, m_dwOpenSSLVeresion[0x30000020]
+[2025-04-14 18:52:00.914][DBG] COpenSSLAPI::IsAllAPILoaded, Function[SSL_library_init] Unload
+[2025-04-14 18:52:00.914][DBG] CSSLTrans::LoadSSLLib, Not All Function Loaded
+[2025-04-14 18:52:00.914][DBG] OpenSSL: Version[OpenSSL 3.0.2 15 Mar 2022]
+[2025-04-14 18:52:00.914][INF] CSSLTrans::SSLCtxInit, dwSSLVersion[6], m_fnTLSServerMethod
+[2025-04-14 18:52:00.917][DBG] CListenServer::StartServer, CoreBase_CreateServerLink SUCC, ENUM_LINK_TYPE_MQTT, Addr[:7660], m_iMqttLinkHandle[1]
+[2025-04-14 18:52:00.917][DBG] NET_ECMS_StartListen, SUCC

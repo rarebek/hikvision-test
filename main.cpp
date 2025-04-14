@@ -249,6 +249,13 @@ BOOL CALLBACK DeviceRegisterCallback(LONG lUserID, DWORD dwDataType, void *pOutB
                 std::cout << "Failed to set server info. Error code: " 
                           << NET_ECMS_GetLastError() << std::endl;
             }
+            else {
+                // Print success message in a nice box
+                printBoxedInfo("CONNECTION SUCCESS", 
+                    "Device ID: " + std::string((char*)pDevInfo->byDeviceID) + "\n" +
+                    "Server info configured successfully\n" +
+                    "Connection established and ready");
+            }
             
             return TRUE;
         }
