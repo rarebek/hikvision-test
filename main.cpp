@@ -222,9 +222,11 @@ int main() {
     
     // Setup authentication for device (if needed)
     NET_EHOME_DEV_SESSIONKEY deviceKey = {0};
-    // strcpy reinterpret_cast<char*>(deviceKey.sDeviceID), "your_device_id"); // Uncomment if needed
-    // strcpy reinterpret_cast<char*>(deviceKey.sSessionKey), "verification_code"); // Uncomment if needed
-    // NET_ECMS_SetDeviceSessionKey(&deviceKey); // Uncomment if needed
+    strcpy(reinterpret_cast<char*>(deviceKey.sDeviceID), "k26311722"); // Device ID from logs
+    strcpy(reinterpret_cast<char*>(deviceKey.sSessionKey), "12345");   // Use any verification code - update this in your device config
+    NET_ECMS_SetDeviceSessionKey(&deviceKey);
+    
+    printBoxedInfo("AUTHENTICATION SETUP", "Configured authentication for device: k26311722");
     
     // Setup listen parameters for device registration
     NET_EHOME_CMS_LISTEN_PARAM listenParam = {0};

@@ -21,6 +21,7 @@ add_executable(hikvision_device_info main.cpp)
 target_link_libraries(hikvision_device_info
     ${CMAKE_SOURCE_DIR}/hikvision_sdk/lib/libHCISUPCMS.so
     ${CMAKE_SOURCE_DIR}/hikvision_sdk/lib/libHCISUPSS.so
+    ${CMAKE_SOURCE_DIR}/hikvision_sdk/lib/libHCISUPStream.so
     pthread
 )
 
