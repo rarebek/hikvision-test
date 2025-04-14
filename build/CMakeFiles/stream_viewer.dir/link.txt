@@ -1,1 +1,1 @@
-/usr/bin/c++ CMakeFiles/stream_viewer.dir/main.cpp.o -o stream_viewer   -L/home/rare/development/learning-cpp/hikvision_sdk/lib  -Wl,-rpath,/home/rare/development/learning-cpp/hikvision_sdk/lib -lHCISUPStream 
+/usr/bin/c++ CMakeFiles/stream_viewer.dir/main.cpp.o -o stream_viewer   -L/home/rare/development/learning-cpp/hikvision_sdk/lib  -Wl,-rpath,/home/rare/development/learning-cpp/hikvision_sdk/lib -lHCISUPStream -lHCISUPSS 
