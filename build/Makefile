@@ -187,6 +187,43 @@ stream_saver/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_saver.dir/build.make CMakeFiles/stream_saver.dir/build
 .PHONY : stream_saver/fast
 
+#=============================================================================
+# Target rules for targets named get_device_info
+
+# Build rule for target.
+get_device_info: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 get_device_info
+.PHONY : get_device_info
+
+# fast build rule for target.
+get_device_info/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/get_device_info.dir/build.make CMakeFiles/get_device_info.dir/build
+.PHONY : get_device_info/fast
+
+get_device_info.o: get_device_info.cpp.o
+.PHONY : get_device_info.o
+
+# target to build an object file
+get_device_info.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/get_device_info.dir/build.make CMakeFiles/get_device_info.dir/get_device_info.cpp.o
+.PHONY : get_device_info.cpp.o
+
+get_device_info.i: get_device_info.cpp.i
+.PHONY : get_device_info.i
+
+# target to preprocess a source file
+get_device_info.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/get_device_info.dir/build.make CMakeFiles/get_device_info.dir/get_device_info.cpp.i
+.PHONY : get_device_info.cpp.i
+
+get_device_info.s: get_device_info.cpp.s
+.PHONY : get_device_info.s
+
+# target to generate assembly for a file
+get_device_info.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/get_device_info.dir/build.make CMakeFiles/get_device_info.dir/get_device_info.cpp.s
+.PHONY : get_device_info.cpp.s
+
 main.o: main.cpp.o
 .PHONY : main.o
 
@@ -247,8 +284,12 @@ help:
 	@echo "... install/strip"
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
+	@echo "... get_device_info"
 	@echo "... stream_saver"
 	@echo "... stream_viewer"
+	@echo "... get_device_info.o"
+	@echo "... get_device_info.i"
+	@echo "... get_device_info.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

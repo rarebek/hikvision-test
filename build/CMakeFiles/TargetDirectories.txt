@@ -1,5 +1,6 @@
 /home/rare/development/learning-cpp/build/CMakeFiles/stream_viewer.dir
 /home/rare/development/learning-cpp/build/CMakeFiles/stream_saver.dir
+/home/rare/development/learning-cpp/build/CMakeFiles/get_device_info.dir
 /home/rare/development/learning-cpp/build/CMakeFiles/edit_cache.dir
 /home/rare/development/learning-cpp/build/CMakeFiles/rebuild_cache.dir
 /home/rare/development/learning-cpp/build/CMakeFiles/list_install_components.dir

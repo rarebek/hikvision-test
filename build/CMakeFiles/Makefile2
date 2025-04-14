@@ -65,6 +65,7 @@ CMAKE_BINARY_DIR = /home/rare/development/learning-cpp/build
 # The main recursive "all" target.
 all: CMakeFiles/stream_viewer.dir/all
 all: CMakeFiles/stream_saver.dir/all
+all: CMakeFiles/get_device_info.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -74,6 +75,7 @@ preinstall:
 # The main recursive "clean" target.
 clean: CMakeFiles/stream_viewer.dir/clean
 clean: CMakeFiles/stream_saver.dir/clean
+clean: CMakeFiles/get_device_info.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -83,7 +85,7 @@ clean: CMakeFiles/stream_saver.dir/clean
 CMakeFiles/stream_viewer.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_viewer.dir/build.make CMakeFiles/stream_viewer.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_viewer.dir/build.make CMakeFiles/stream_viewer.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rare/development/learning-cpp/build/CMakeFiles --progress-num=3,4 "Built target stream_viewer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rare/development/learning-cpp/build/CMakeFiles --progress-num=5,6 "Built target stream_viewer"
 .PHONY : CMakeFiles/stream_viewer.dir/all
 
 # Build rule for subdir invocation for target.
@@ -109,7 +111,7 @@ CMakeFiles/stream_viewer.dir/clean:
 CMakeFiles/stream_saver.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_saver.dir/build.make CMakeFiles/stream_saver.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_saver.dir/build.make CMakeFiles/stream_saver.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rare/development/learning-cpp/build/CMakeFiles --progress-num=1,2 "Built target stream_saver"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rare/development/learning-cpp/build/CMakeFiles --progress-num=3,4 "Built target stream_saver"
 .PHONY : CMakeFiles/stream_saver.dir/all
 
 # Build rule for subdir invocation for target.
@@ -127,6 +129,32 @@ stream_saver: CMakeFiles/stream_saver.dir/rule
 CMakeFiles/stream_saver.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_saver.dir/build.make CMakeFiles/stream_saver.dir/clean
 .PHONY : CMakeFiles/stream_saver.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/get_device_info.dir
+
+# All Build rule for target.
+CMakeFiles/get_device_info.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/get_device_info.dir/build.make CMakeFiles/get_device_info.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/get_device_info.dir/build.make CMakeFiles/get_device_info.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/rare/development/learning-cpp/build/CMakeFiles --progress-num=1,2 "Built target get_device_info"
+.PHONY : CMakeFiles/get_device_info.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/get_device_info.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/rare/development/learning-cpp/build/CMakeFiles 2
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/get_device_info.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/rare/development/learning-cpp/build/CMakeFiles 0
+.PHONY : CMakeFiles/get_device_info.dir/rule
+
+# Convenience name for target.
+get_device_info: CMakeFiles/get_device_info.dir/rule
+.PHONY : get_device_info
+
+# clean rule for target.
+CMakeFiles/get_device_info.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/get_device_info.dir/build.make CMakeFiles/get_device_info.dir/clean
+.PHONY : CMakeFiles/get_device_info.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.
