@@ -9,26 +9,158 @@
 #include <fstream>
 #include <atomic>
 #include <ctime>
+#include <vector>
+#include <arpa/inet.h>
 
 // Hikvision SDK headers
 #include "HCISUPPublic.h"
 #include "HCISUPCMS.h"
 #include "HCISUPStream.h"
 
+// Define the structure for verification param (not found in headers)
+typedef NET_EHOME_DEV_REG_INFO_V12 NET_EHOME_VERIFICATION_PARAM;
+
 // Global variables for recording
 std::ofstream g_recordFile;
 std::atomic<bool> g_isRecording(false);
-std::chrono::time_point<std::chrono::system_clock> g_recordStartTime;
+std::chrono::system_clock::time_point g_recordStartTime;
 std::mutex g_mtx;
 std::condition_variable g_cv;
 bool g_exitApp = false;
 
+// Store verification keys for devices
+struct DeviceKey {
+    char deviceID[MAX_DEVICE_ID_LEN + 1];
+    char key[64];
+};
+std::vector<DeviceKey> g_deviceKeys;
+
+// Additional global variables for device connection status
+std::atomic<bool> g_isDeviceConnected(false);
+std::string g_deviceID;
+LONG g_linkHandle = -1;
+
 // Device registration callback
-BOOL CALLBACK DeviceRegisterCallback(LONG lUserID, DWORD dwDataType, void *pOutBuffer, DWORD dwOutLen, 
-                                     void *pInBuffer, DWORD dwInLen, void *pUser);
+BOOL CALLBACK DeviceRegisterCallback(LONG lUserID, DWORD dwDataType, void *pOutBuffer, DWORD dwOutLen, void *pInBuffer, DWORD dwInLen, void *pUser) {
+    std::cout << "Device register callback. Data type: " << dwDataType << std::endl;
+    
+    switch (dwDataType) {
+        case ENUM_DEV_ON: {
+            NET_EHOME_DEV_REG_INFO_V12 *pDevInfo = (NET_EHOME_DEV_REG_INFO_V12*)pOutBuffer;
+            char deviceID[MAX_DEVICE_ID_LEN + 1] = {0};
+            memcpy(deviceID, pDevInfo->struRegInfo.byDeviceID, MAX_DEVICE_ID_LEN);
+            deviceID[MAX_DEVICE_ID_LEN] = 0;
+            
+            std::cout << "Device online. ID: " << deviceID << ", IP: " 
+                      << pDevInfo->struRegInfo.struDevAdd.szIP 
+                      << ":" << pDevInfo->struRegInfo.struDevAdd.wPort 
+                      << ", Link handle: " << lUserID << std::endl;
+            
+            // Update globals for connection status
+            g_isDeviceConnected = true;
+            g_deviceID = deviceID;
+            g_linkHandle = lUserID;
+            g_cv.notify_all();
+            break;
+        }
+        case ENUM_DEV_OFF: {
+            NET_EHOME_DEV_REG_INFO_V12 *pDevInfo = (NET_EHOME_DEV_REG_INFO_V12*)pOutBuffer;
+            char deviceID[MAX_DEVICE_ID_LEN + 1] = {0};
+            memcpy(deviceID, pDevInfo->struRegInfo.byDeviceID, MAX_DEVICE_ID_LEN);
+            deviceID[MAX_DEVICE_ID_LEN] = 0;
+            
+            std::cout << "Device offline. ID: " << deviceID << std::endl;
+            g_isDeviceConnected = false;
+            g_deviceID = "";
+            g_linkHandle = -1;
+            break;
+        }
+        case ENUM_DEV_AUTH: {
+            // Handle device authentication
+            NET_EHOME_VERIFICATION_PARAM *pVerifyParam = (NET_EHOME_VERIFICATION_PARAM*)pOutBuffer;
+            char deviceID[MAX_DEVICE_ID_LEN + 1] = {0};
+            memcpy(deviceID, pVerifyParam->struRegInfo.byDeviceID, MAX_DEVICE_ID_LEN);
+            deviceID[MAX_DEVICE_ID_LEN] = 0;
+            
+            std::cout << "Device authentication request. ID: " << deviceID << std::endl;
+            
+            // Find the key for this device
+            const char* key = nullptr;
+            for (const auto& device : g_deviceKeys) {
+                if (strcmp(device.deviceID, deviceID) == 0) {
+                    key = device.key;
+                    break;
+                }
+            }
+            
+            if (key) {
+                // Set the verification key in the bySessionKey field
+                memset(pVerifyParam->struRegInfo.bySessionKey, 0, MAX_MASTER_KEY_LEN);
+                memcpy(pVerifyParam->struRegInfo.bySessionKey, key, strlen(key));
+                std::cout << "Device authentication: setting verification key for " << deviceID << std::endl;
+            } else {
+                std::cout << "ERROR: No authentication key found for device ID: " << deviceID << std::endl;
+            }
+            break;
+        }
+        case ENUM_DEV_SESSIONKEY: {
+            NET_EHOME_DEV_SESSIONKEY *pSessionKey = (NET_EHOME_DEV_SESSIONKEY*)pInBuffer;
+            NET_EHOME_DEV_REG_INFO_V12 *pDevInfo = (NET_EHOME_DEV_REG_INFO_V12*)pOutBuffer;
+            
+            char deviceID[MAX_DEVICE_ID_LEN + 1] = {0};
+            memcpy(deviceID, pDevInfo->struRegInfo.byDeviceID, MAX_DEVICE_ID_LEN);
+            deviceID[MAX_DEVICE_ID_LEN] = 0;
+            
+            // Find the key for this device
+            const char* key = nullptr;
+            for (const auto& device : g_deviceKeys) {
+                if (strcmp(device.deviceID, deviceID) == 0) {
+                    key = device.key;
+                    break;
+                }
+            }
+            
+            if (key && pSessionKey) {
+                // Copy device ID to session key structure
+                memset(pSessionKey->sDeviceID, 0, MAX_DEVICE_ID_LEN);
+                memcpy(pSessionKey->sDeviceID, deviceID, strlen(deviceID));
+                
+                // Copy the key to session key
+                memset(pSessionKey->sSessionKey, 0, MAX_MASTER_KEY_LEN);
+                memcpy(pSessionKey->sSessionKey, key, strlen(key));
+                
+                std::cout << "Setting session key for device: " << deviceID << std::endl;
+                return TRUE;
+            } else {
+                std::cout << "ERROR: No session key found for device ID: " << deviceID << std::endl;
+            }
+            break;
+        }
+        default:
+            std::cout << "Unknown data type: " << dwDataType << std::endl;
+            break;
+    }
+    
+    return TRUE;
+}
 
 // Preview data callback
-void CALLBACK PreviewDataCallback(LONG iPreviewHandle, NET_EHOME_PREVIEW_CB_MSG *pPreviewCBMsg, void *pUserData);
+void CALLBACK PreviewDataCallback(LONG iPreviewHandle, NET_EHOME_PREVIEW_CB_MSG *pPreviewCBMsg, void *pUserData) {
+    if (pPreviewCBMsg == NULL || !g_isRecording || !g_recordFile.is_open()) {
+        return;
+    }
+    
+    // Write data to file
+    if (pPreviewCBMsg->byDataType == NET_EHOME_SYSHEAD || pPreviewCBMsg->byDataType == NET_EHOME_STREAMDATA) {
+        g_recordFile.write(static_cast<char*>(pPreviewCBMsg->pRecvdata), pPreviewCBMsg->dwDataLen);
+        
+        // Check if recording time exceeded
+        auto currentTime = std::chrono::system_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - g_recordStartTime).count() >= 5) {
+            g_isRecording = false;
+        }
+    }
+}
 
 // Function to print box with borders
 void printBoxedInfo(const std::string& title, const std::string& content) {
@@ -220,13 +352,13 @@ int main() {
     // Set log parameters
     NET_ECMS_SetLogToFile(3, const_cast<char*>("./logs"), TRUE);
     
-    // Setup authentication for device (if needed)
-    NET_EHOME_DEV_SESSIONKEY deviceKey = {0};
-    strcpy(reinterpret_cast<char*>(deviceKey.sDeviceID), "k26311722"); // Device ID from logs
-    strcpy(reinterpret_cast<char*>(deviceKey.sSessionKey), "qq14253689"); // EHome key from logs
-    NET_ECMS_SetDeviceSessionKey(&deviceKey);
+    // Add known device key
+    DeviceKey knownDevice;
+    strcpy(knownDevice.deviceID, "k26311722");
+    strcpy(knownDevice.key, "qq14253689");
+    g_deviceKeys.push_back(knownDevice);
     
-    printBoxedInfo("AUTHENTICATION SETUP", "Configured authentication for device: k26311722\nKey: qq14253689");
+    printBoxedInfo("AUTHENTICATION SETUP", "Using verification key: qq14253689\nHandling auth directly in callback");
     
     // Setup listen parameters for device registration
     NET_EHOME_CMS_LISTEN_PARAM listenParam = {0};
@@ -240,7 +372,7 @@ int main() {
     
     // Set the callback function
     listenParam.fnCB = DeviceRegisterCallback;
-    listenParam.pUserData = NULL;
+    listenParam.pUserData = nullptr;
     
     // Start listening for device connections
     LONG listenHandle = NET_ECMS_StartListen(&listenParam);
@@ -266,94 +398,4 @@ int main() {
     std::cout << "Application exited." << std::endl;
     
     return 0;
-}
-
-// Preview data callback function
-void CALLBACK PreviewDataCallback(LONG iPreviewHandle, NET_EHOME_PREVIEW_CB_MSG *pPreviewCBMsg, void *pUserData) {
-    if (pPreviewCBMsg == NULL || !g_isRecording || !g_recordFile.is_open()) {
-        return;
-    }
-    
-    // Write data to file
-    if (pPreviewCBMsg->byDataType == NET_EHOME_SYSHEAD || pPreviewCBMsg->byDataType == NET_EHOME_STREAMDATA) {
-        g_recordFile.write(static_cast<char*>(pPreviewCBMsg->pRecvdata), pPreviewCBMsg->dwDataLen);
-        
-        // Check if recording time exceeded
-        auto currentTime = std::chrono::system_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - g_recordStartTime).count() >= 5) {
-            g_isRecording = false;
-        }
-    }
-}
-
-// Device registration callback function
-BOOL CALLBACK DeviceRegisterCallback(LONG lUserID, DWORD dwDataType, void *pOutBuffer, DWORD dwOutLen, 
-                                     void *pInBuffer, DWORD dwInLen, void *pUser) {
-    if (dwDataType == ENUM_DEV_ON) {
-        // Device is online
-        if (pOutBuffer != nullptr && dwOutLen == sizeof(NET_EHOME_DEV_REG_INFO)) {
-            NET_EHOME_DEV_REG_INFO *pDevInfo = (NET_EHOME_DEV_REG_INFO*)pOutBuffer;
-            
-            // Print device info in a nice format
-            prettyPrintDeviceInfo(*pDevInfo);
-            
-            // Get detailed device information
-            getDeviceDetailedInfo(lUserID);
-            
-            // Set server info for the connected device
-            NET_EHOME_SERVER_INFO serverInfo = {0};
-            serverInfo.dwSize = sizeof(NET_EHOME_SERVER_INFO);
-            serverInfo.dwAlarmServerType = 1; // Support TCP and UDP
-            serverInfo.dwKeepAliveSec = 15;   // 15 seconds keep-alive
-            
-            // Set alarm server address (same as CMS)
-            serverInfo.struTCPAlarmSever.szIP[0] = 0;
-            serverInfo.struTCPAlarmSever.szIP[1] = 0;
-            serverInfo.struTCPAlarmSever.szIP[2] = 0;
-            serverInfo.struTCPAlarmSever.szIP[3] = 0;
-            serverInfo.struTCPAlarmSever.wPort = 7660;
-            
-            // Set alarm server info
-            NET_EHOME_CONFIG config = {0};
-            config.pInBuf = &serverInfo;
-            config.dwInSize = sizeof(NET_EHOME_SERVER_INFO);
-            
-            if (!NET_ECMS_SetDevConfig(lUserID, 3 /*NET_EHOME_SET_SERVER_INFO*/, &config, sizeof(NET_EHOME_CONFIG))) {
-                std::cout << "Failed to set server info. Error code: " 
-                          << NET_ECMS_GetLastError() << std::endl;
-            }
-            else {
-                printBoxedInfo("CONNECTION SUCCESS", 
-                    "Device ID: " + std::string(reinterpret_cast<char*>(pDevInfo->byDeviceID)) + "\n" +
-                    "Server info configured successfully\n" +
-                    "Connection established and ready");
-                
-                // Start recording from this device
-                std::thread([lUserID, pDevInfo]() {
-                    // Wait a moment to ensure device is fully registered
-                    std::this_thread::sleep_for(std::chrono::seconds(2));
-                    
-                    char deviceID[MAX_DEVICE_ID_LEN + 1] = {0};
-                    memcpy(deviceID, pDevInfo->byDeviceID, MAX_DEVICE_ID_LEN);
-                    
-                    // Start recording
-                    startRecording(lUserID, deviceID);
-                }).detach();
-            }
-            
-            return TRUE;
-        }
-    } 
-    else if (dwDataType == ENUM_DEV_OFF) {
-        // Device went offline
-        std::cout << "Device disconnected. User ID: " << lUserID << std::endl;
-        return TRUE;
-    } 
-    else if (dwDataType == ENUM_DEV_ADDRESS_CHANGED) {
-        // Device address changed
-        std::cout << "Device address changed. User ID: " << lUserID << std::endl;
-        return TRUE;
-    }
-    
-    return FALSE;
 } 
