@@ -15,6 +15,17 @@
 #define NET_EHOME_GET_VERSION_INFO     0x1006
 #define NET_EHOME_SET_SERVER_INFO      0x2000
 
+// Define session key structure if not in SDK headers
+#define MAX_DEVICE_ID_LEN  256
+#define MAX_MASTER_KEY_LEN 32
+
+typedef struct tagNET_EHOME_DEV_SESSIONKEY
+{
+    BYTE  sDeviceID[MAX_DEVICE_ID_LEN];
+    BYTE  sSessionKey[MAX_MASTER_KEY_LEN];
+    BYTE  byRes[64];
+}NET_EHOME_DEV_SESSIONKEY, *LPNET_EHOME_DEV_SESSIONKEY;
+
 // Device registration callback
 BOOL CALLBACK DeviceRegisterCallback(LONG lUserID, DWORD dwDataType, void *pOutBuffer, DWORD dwOutLen, 
                                      void *pInBuffer, DWORD dwInLen, void *pUser);
@@ -170,6 +181,14 @@ int main() {
     
     // Set log parameters
     NET_ECMS_SetLogToFile(3, const_cast<char*>("./logs"), TRUE);
+    
+    // Set device authentication keys - match these with your device configuration
+    NET_EHOME_DEV_SESSIONKEY deviceKey = {0};
+    strcpy((char*)deviceKey.sDeviceID, "k26311722"); // Use your device ID
+    strcpy((char*)deviceKey.sSessionKey, "12345");   // Use your verification code here
+    NET_ECMS_SetDeviceSessionKey(&deviceKey);
+    
+    printBoxedInfo("AUTHENTICATION SETUP", "Configured authentication for device: k26311722");
     
     // Setup listen parameters for device registration
     NET_EHOME_CMS_LISTEN_PARAM listenParam = {0};
