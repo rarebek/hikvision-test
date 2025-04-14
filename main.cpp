@@ -10,21 +10,11 @@
 #include "HCISUPPublic.h"
 #include "HCISUPCMS.h"
 
-// Define command codes if not in SDK headers
-#define NET_EHOME_GET_DEVICE_INFO      0x1000
-#define NET_EHOME_GET_VERSION_INFO     0x1006
-#define NET_EHOME_SET_SERVER_INFO      0x2000
-
-// Define session key structure if not in SDK headers
-#define MAX_DEVICE_ID_LEN  256
-#define MAX_MASTER_KEY_LEN 32
-
-typedef struct tagNET_EHOME_DEV_SESSIONKEY
-{
-    BYTE  sDeviceID[MAX_DEVICE_ID_LEN];
-    BYTE  sSessionKey[MAX_MASTER_KEY_LEN];
-    BYTE  byRes[64];
-}NET_EHOME_DEV_SESSIONKEY, *LPNET_EHOME_DEV_SESSIONKEY;
+// Define commands that might not be in SDK headers
+// Note: These use the actual values from HCISUPCMS.h
+//#define NET_EHOME_GET_DEVICE_INFO      1    // Already defined in SDK
+//#define NET_EHOME_GET_VERSION_INFO     2    // Already defined in SDK
+#define NET_EHOME_SET_SERVER_INFO      3    // Use this value instead of 0x2000
 
 // Device registration callback
 BOOL CALLBACK DeviceRegisterCallback(LONG lUserID, DWORD dwDataType, void *pOutBuffer, DWORD dwOutLen, 
