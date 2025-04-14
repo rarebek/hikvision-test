@@ -16,7 +16,7 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/logs)
 add_executable(stream_viewer main.cpp)
 target_include_directories(stream_viewer PRIVATE ${HIKVISION_INCLUDE_DIR})
 target_link_directories(stream_viewer PRIVATE ${HIKVISION_LIB_DIR})
-target_link_libraries(stream_viewer HCISUPStream)
+target_link_libraries(stream_viewer HCISUPStream HCISUPSS)
 
 # Set RPATH for the executable so it can find the shared libraries
 set_target_properties(stream_viewer PROPERTIES
@@ -36,11 +36,23 @@ set_target_properties(stream_saver PROPERTIES
     BUILD_WITH_INSTALL_RPATH TRUE
 )
 
+# Device info utility
+add_executable(get_device_info get_device_info.cpp)
+target_include_directories(get_device_info PRIVATE ${HIKVISION_INCLUDE_DIR})
+target_link_directories(get_device_info PRIVATE ${HIKVISION_LIB_DIR})
+target_link_libraries(get_device_info HCISUPStream HCISUPSS)
+
+# Set RPATH for the executable so it can find the shared libraries
+set_target_properties(get_device_info PROPERTIES
+    INSTALL_RPATH "${HIKVISION_LIB_DIR}"
+    BUILD_WITH_INSTALL_RPATH TRUE
+)
+
 # Install targets
-install(TARGETS stream_viewer stream_saver
+install(TARGETS stream_viewer stream_saver get_device_info
     RUNTIME DESTINATION bin
 )
 
 # Update the README with build instructions
 message(STATUS "Build with: mkdir -p build && cd build && cmake .. && make")
-message(STATUS "Run with: ./stream_viewer <port> or ./stream_saver <port>") 
+message(STATUS "Run with: ./stream_viewer <port>, ./stream_saver <port>, or ./get_device_info <port>") 
