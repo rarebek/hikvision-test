@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/stream_saver.dir/main_save_to_file.cpp.o -o stream_saver   -L/home/rare/development/learning-cpp/hikvision_sdk/lib  -Wl,-rpath,/home/rare/development/learning-cpp/hikvision_sdk/lib -lHCISUPStream 

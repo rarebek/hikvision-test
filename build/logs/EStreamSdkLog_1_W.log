@@ -1,0 +1,12 @@
+The COM:HCCoreBase ver is 1.0.0.2, 2019_07_24. Async:1.
+version:HCISUPStream version is 2.5.1.23, 2024_03_11.
+[2025-04-14 16:42:47.140][DBG] CMemoryMgr::CreateMemoryPool, nIndex[10], dwChunkSize[246304], nOnceAlloc[16], nMaxAlloc[20480]
+[2025-04-14 16:42:47.140][DBG] CServerLinkMgr::CServerLinkMgr, CreateMemoryPool SUCC, MemPoolIndex[10]
+[2025-04-14 16:42:47.140][DBG] CMemoryMgr::AllocMemoryPoolByIndex, CMemoryMgr[0xFF597370], MemPoolIndex[10], MemPool[0xFF761C70], dwChunkSize[246304]
+[2025-04-14 16:42:47.140][DBG] CMemoryMgr::AllocMemoryPoolByIndex, CMemoryMgr[0xFF597370], MemPoolIndex[0], MemPool[0xFF761E00], dwChunkSize[16]
+[2025-04-14 16:42:47.140][DBG] [0]CStreamListenPreviewSession::Start, SUCC, m_iServerLink[0], Addr[0.0.0.0:6000], byLinkMode[0]
+[2025-04-14 16:42:47.140][DBG] NET_ESTREAM_StartListenPreview, Create SUCC, iHandle[0], byLinkMode[0]
+[2025-04-14 16:43:18.275][DBG] [0]CStreamListenPreviewSession::Stop, m_iServerLink[0]
+[2025-04-14 16:43:18.280][DBG] NET_ESTREAM_StopListenPreview, Destroy SUCC, iHandle[0]
+[2025-04-14 16:43:21.744][DBG] CStreamGlobalCtrl::DestroyPlayBackMgr
+[2025-04-14 16:43:22.004][DBG] CCoreGlobalCtrlBase::TimerThread, Last Log Print

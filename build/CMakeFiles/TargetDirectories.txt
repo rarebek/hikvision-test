@@ -1,0 +1,8 @@
+/home/rare/development/learning-cpp/build/CMakeFiles/stream_viewer.dir
+/home/rare/development/learning-cpp/build/CMakeFiles/stream_saver.dir
+/home/rare/development/learning-cpp/build/CMakeFiles/edit_cache.dir
+/home/rare/development/learning-cpp/build/CMakeFiles/rebuild_cache.dir
+/home/rare/development/learning-cpp/build/CMakeFiles/list_install_components.dir
+/home/rare/development/learning-cpp/build/CMakeFiles/install.dir
+/home/rare/development/learning-cpp/build/CMakeFiles/install/local.dir
+/home/rare/development/learning-cpp/build/CMakeFiles/install/strip.dir
