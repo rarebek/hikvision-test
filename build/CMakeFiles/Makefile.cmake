@@ -118,7 +118,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/stream_viewer.dir/DependInfo.cmake"
-  "CMakeFiles/stream_saver.dir/DependInfo.cmake"
-  "CMakeFiles/get_device_info.dir/DependInfo.cmake"
+  "CMakeFiles/hikvision_device_info.dir/DependInfo.cmake"
   )

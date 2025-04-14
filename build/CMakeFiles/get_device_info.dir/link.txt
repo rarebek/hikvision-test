@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/get_device_info.dir/get_device_info.cpp.o -o get_device_info   -L/home/rare/development/learning-cpp/hikvision_sdk/lib  -Wl,-rpath,/home/rare/development/learning-cpp/hikvision_sdk/lib -lHCISUPStream -lHCISUPSS 

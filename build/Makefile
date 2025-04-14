@@ -85,51 +85,6 @@ rebuild_cache:
 rebuild_cache/fast: rebuild_cache
 .PHONY : rebuild_cache/fast
 
-# Special rule for the target list_install_components
-list_install_components:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\""
-.PHONY : list_install_components
-
-# Special rule for the target list_install_components
-list_install_components/fast: list_install_components
-.PHONY : list_install_components/fast
-
-# Special rule for the target install
-install: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install
-
-# Special rule for the target install
-install/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install/fast
-
-# Special rule for the target install/local
-install/local: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
-.PHONY : install/local
-
-# Special rule for the target install/local
-install/local/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
-.PHONY : install/local/fast
-
-# Special rule for the target install/strip
-install/strip: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
-	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
-.PHONY : install/strip
-
-# Special rule for the target install/strip
-install/strip/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
-	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
-.PHONY : install/strip/fast
-
 # The main all target
 all: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/rare/development/learning-cpp/build/CMakeFiles /home/rare/development/learning-cpp/build//CMakeFiles/progress.marks
@@ -162,74 +117,24 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named stream_viewer
+# Target rules for targets named hikvision_device_info
 
 # Build rule for target.
-stream_viewer: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 stream_viewer
-.PHONY : stream_viewer
+hikvision_device_info: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 hikvision_device_info
+.PHONY : hikvision_device_info
 
 # fast build rule for target.
-stream_viewer/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_viewer.dir/build.make CMakeFiles/stream_viewer.dir/build
-.PHONY : stream_viewer/fast
-
-#=============================================================================
-# Target rules for targets named stream_saver
-
-# Build rule for target.
-stream_saver: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 stream_saver
-.PHONY : stream_saver
-
-# fast build rule for target.
-stream_saver/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_saver.dir/build.make CMakeFiles/stream_saver.dir/build
-.PHONY : stream_saver/fast
-
-#=============================================================================
-# Target rules for targets named get_device_info
-
-# Build rule for target.
-get_device_info: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 get_device_info
-.PHONY : get_device_info
-
-# fast build rule for target.
-get_device_info/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/get_device_info.dir/build.make CMakeFiles/get_device_info.dir/build
-.PHONY : get_device_info/fast
-
-get_device_info.o: get_device_info.cpp.o
-.PHONY : get_device_info.o
-
-# target to build an object file
-get_device_info.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/get_device_info.dir/build.make CMakeFiles/get_device_info.dir/get_device_info.cpp.o
-.PHONY : get_device_info.cpp.o
-
-get_device_info.i: get_device_info.cpp.i
-.PHONY : get_device_info.i
-
-# target to preprocess a source file
-get_device_info.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/get_device_info.dir/build.make CMakeFiles/get_device_info.dir/get_device_info.cpp.i
-.PHONY : get_device_info.cpp.i
-
-get_device_info.s: get_device_info.cpp.s
-.PHONY : get_device_info.s
-
-# target to generate assembly for a file
-get_device_info.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/get_device_info.dir/build.make CMakeFiles/get_device_info.dir/get_device_info.cpp.s
-.PHONY : get_device_info.cpp.s
+hikvision_device_info/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hikvision_device_info.dir/build.make CMakeFiles/hikvision_device_info.dir/build
+.PHONY : hikvision_device_info/fast
 
 main.o: main.cpp.o
 .PHONY : main.o
 
 # target to build an object file
 main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_viewer.dir/build.make CMakeFiles/stream_viewer.dir/main.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hikvision_device_info.dir/build.make CMakeFiles/hikvision_device_info.dir/main.cpp.o
 .PHONY : main.cpp.o
 
 main.i: main.cpp.i
@@ -237,7 +142,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_viewer.dir/build.make CMakeFiles/stream_viewer.dir/main.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hikvision_device_info.dir/build.make CMakeFiles/hikvision_device_info.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -245,32 +150,8 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_viewer.dir/build.make CMakeFiles/stream_viewer.dir/main.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hikvision_device_info.dir/build.make CMakeFiles/hikvision_device_info.dir/main.cpp.s
 .PHONY : main.cpp.s
-
-main_save_to_file.o: main_save_to_file.cpp.o
-.PHONY : main_save_to_file.o
-
-# target to build an object file
-main_save_to_file.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_saver.dir/build.make CMakeFiles/stream_saver.dir/main_save_to_file.cpp.o
-.PHONY : main_save_to_file.cpp.o
-
-main_save_to_file.i: main_save_to_file.cpp.i
-.PHONY : main_save_to_file.i
-
-# target to preprocess a source file
-main_save_to_file.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_saver.dir/build.make CMakeFiles/stream_saver.dir/main_save_to_file.cpp.i
-.PHONY : main_save_to_file.cpp.i
-
-main_save_to_file.s: main_save_to_file.cpp.s
-.PHONY : main_save_to_file.s
-
-# target to generate assembly for a file
-main_save_to_file.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/stream_saver.dir/build.make CMakeFiles/stream_saver.dir/main_save_to_file.cpp.s
-.PHONY : main_save_to_file.cpp.s
 
 # Help Target
 help:
@@ -279,23 +160,11 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
-	@echo "... install"
-	@echo "... install/local"
-	@echo "... install/strip"
-	@echo "... list_install_components"
 	@echo "... rebuild_cache"
-	@echo "... get_device_info"
-	@echo "... stream_saver"
-	@echo "... stream_viewer"
-	@echo "... get_device_info.o"
-	@echo "... get_device_info.i"
-	@echo "... get_device_info.s"
+	@echo "... hikvision_device_info"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
-	@echo "... main_save_to_file.o"
-	@echo "... main_save_to_file.i"
-	@echo "... main_save_to_file.s"
 .PHONY : help
 
 

@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/rare/development/learning-cpp/hikvision_sdk
+CXX_INCLUDES = -I/home/rare/development/learning-cpp/hikvision_sdk/incEn
 
 CXX_FLAGS = -std=gnu++11
 

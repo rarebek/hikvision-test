@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/hikvision_device_info.dir/main.cpp.o -o hikvision_device_info   -L/home/rare/development/learning-cpp/hikvision_sdk/lib  -Wl,-rpath,/home/rare/development/learning-cpp/hikvision_sdk/lib -lHCISUPCMS -lHCISUPSS -lpthread 

@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/rare/development/learning-cpp/main.cpp" "CMakeFiles/stream_viewer.dir/main.cpp.o" "gcc" "CMakeFiles/stream_viewer.dir/main.cpp.o.d"
+  "/home/rare/development/learning-cpp/main.cpp" "CMakeFiles/hikvision_device_info.dir/main.cpp.o" "gcc" "CMakeFiles/hikvision_device_info.dir/main.cpp.o.d"
   )
 
 # Targets to which this target links.

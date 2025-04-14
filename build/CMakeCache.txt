@@ -145,7 +145,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=hikvision_stream_example
+CMAKE_PROJECT_NAME:STATIC=hikvision_device_info
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
@@ -210,13 +210,13 @@ CMAKE_STRIP:FILEPATH=/usr/bin/strip
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
 //Value Computed by CMake
-hikvision_stream_example_BINARY_DIR:STATIC=/home/rare/development/learning-cpp/build
+hikvision_device_info_BINARY_DIR:STATIC=/home/rare/development/learning-cpp/build
 
 //Value Computed by CMake
-hikvision_stream_example_IS_TOP_LEVEL:STATIC=ON
+hikvision_device_info_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
-hikvision_stream_example_SOURCE_DIR:STATIC=/home/rare/development/learning-cpp
+hikvision_device_info_SOURCE_DIR:STATIC=/home/rare/development/learning-cpp
 
 
 ########################
