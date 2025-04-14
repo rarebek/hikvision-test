@@ -1,276 +1,266 @@
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <cstring>
-#include <unistd.h>
-#include <signal.h>
-#include <vector>
-#include <map>
-#include "hikvision_sdk/incEn/HCISUPPublic.h"
-#include "hikvision_sdk/incEn/HCISUPStream.h"
-#include "hikvision_sdk/incEn/HCISUPSS.h"
+#include <functional>
+#include <thread>
+#include <chrono>
 
-// Global variables for control
-bool g_bExit = false;
-LONG g_lListenHandle = -1;
+// Hikvision SDK headers
+#include "HCISUPPublic.h"
+#include "HCISUPCMS.h"
 
-// Device info storage
-struct DeviceInfo {
-    std::string deviceID;
-    std::string serialNumber;
-    LONG sessionID;
-    DWORD channelNo;
-    BYTE streamType;
-    BYTE streamFormat;
-    bool isStreaming;
-    time_t lastDataTime;
-};
+// Define command codes if not in SDK headers
+#define NET_EHOME_GET_DEVICE_INFO      0x1000
+#define NET_EHOME_GET_VERSION_INFO     0x1006
+#define NET_EHOME_SET_SERVER_INFO      0x2000
 
-// Map to store device info by link handle
-std::map<LONG, DeviceInfo> g_deviceMap;
+// Device registration callback
+BOOL CALLBACK DeviceRegisterCallback(LONG lUserID, DWORD dwDataType, void *pOutBuffer, DWORD dwOutLen, 
+                                     void *pInBuffer, DWORD dwInLen, void *pUser);
 
-// Signal handler for graceful termination
-void SignalHandler(int signal)
-{
-    g_bExit = true;
-    std::cout << "Termination signal received, exiting...\n";
+// Function to print box with borders
+void printBoxedInfo(const std::string& title, const std::string& content) {
+    int width = 60;
+    std::string border(width, '-');
+    
+    std::cout << "+" << border << "+" << std::endl;
+    
+    // Print title centered
+    int spaces = (width - title.length()) / 2;
+    std::cout << "|" << std::string(spaces, ' ') << title << std::string(width - title.length() - spaces, ' ') << "|" << std::endl;
+    
+    std::cout << "|" << std::string(width, ' ') << "|" << std::endl;
+    
+    // Split content by newlines and print each line with padding
+    size_t pos = 0;
+    std::string line;
+    std::string remainingContent = content;
+    
+    while ((pos = remainingContent.find('\n')) != std::string::npos) {
+        line = remainingContent.substr(0, pos);
+        std::cout << "| " << std::left << std::setw(width-2) << line << " |" << std::endl;
+        remainingContent.erase(0, pos + 1);
+    }
+    
+    // Print the last line if any
+    if (!remainingContent.empty()) {
+        std::cout << "| " << std::left << std::setw(width-2) << remainingContent << " |" << std::endl;
+    }
+    
+    std::cout << "+" << border << "+" << std::endl;
 }
 
-// Display detailed device information
-void DisplayDeviceInfo(const DeviceInfo& info)
-{
-    std::cout << "\n============ DEVICE INFORMATION ============\n";
-    std::cout << "Device ID: " << info.deviceID << "\n";
-    std::cout << "Serial Number: " << info.serialNumber << "\n";
-    std::cout << "Channel: " << info.channelNo << "\n";
-    std::cout << "Stream Type: " << (int)info.streamType << " (";
+// Function to pretty print device info
+void prettyPrintDeviceInfo(const NET_EHOME_DEV_REG_INFO& deviceInfo) {
+    std::string info;
     
-    // Interpret stream type
-    switch(info.streamType) {
-        case 0: std::cout << "Main stream"; break;
-        case 1: std::cout << "Sub stream"; break;
-        case 2: std::cout << "Third stream"; break;
-        default: std::cout << "Unknown"; break;
-    }
-    std::cout << ")\n";
+    // Format device ID
+    char deviceID[MAX_DEVICE_ID_LEN + 1] = {0};
+    memcpy(deviceID, deviceInfo.byDeviceID, MAX_DEVICE_ID_LEN);
     
-    std::cout << "Stream Format: " << (int)info.streamFormat << " (";
+    // Format firmware version
+    char firmwareVersion[25] = {0};
+    memcpy(firmwareVersion, deviceInfo.byFirmwareVersion, 24);
     
-    // Interpret stream format
-    switch(info.streamFormat) {
-        case 0: std::cout << "PS"; break;
-        case 1: std::cout << "RTP"; break;
-        default: std::cout << "Unknown"; break;
-    }
-    std::cout << ")\n";
+    // Format device serial
+    char deviceSerial[NET_EHOME_SERIAL_LEN + 1] = {0};
+    memcpy(deviceSerial, deviceInfo.sDeviceSerial, NET_EHOME_SERIAL_LEN);
     
-    std::cout << "Session ID: " << info.sessionID << "\n";
-    std::cout << "===========================================\n\n";
+    // Create formatted device info
+    info = "Device ID: " + std::string(deviceID) + "\n";
+    info += "Firmware Version: " + std::string(firmwareVersion) + "\n";
+    info += "Serial Number: " + std::string(deviceSerial) + "\n";
+    info += "Device Type: " + std::to_string(deviceInfo.dwDevType) + "\n";
+    info += "Manufacturer: " + std::to_string(deviceInfo.dwManufacture) + "\n";
+    info += "IP Address: " + std::to_string(deviceInfo.struDevAdd.szIP[0]) + "." +
+                             std::to_string(deviceInfo.struDevAdd.szIP[1]) + "." +
+                             std::to_string(deviceInfo.struDevAdd.szIP[2]) + "." +
+                             std::to_string(deviceInfo.struDevAdd.szIP[3]) + "\n";
+    info += "Port: " + std::to_string(deviceInfo.struDevAdd.wPort);
+    
+    printBoxedInfo("DEVICE CONNECTED", info);
 }
 
-// Callback for handling stream data
-void CALLBACK PreviewDataCallback(LONG iPreviewHandle, NET_EHOME_PREVIEW_CB_MSG *pPreviewCBMsg, void *pUserData)
-{
-    if (pPreviewCBMsg == NULL)
-        return;
+// Function to get detailed device information
+void getDeviceDetailedInfo(LONG lUserID) {
+    // Query device info
+    NET_EHOME_DEVICE_INFO deviceInfo = {0};
+    deviceInfo.dwSize = sizeof(NET_EHOME_DEVICE_INFO);
+    
+    NET_EHOME_CONFIG config = {0};
+    config.pOutBuf = &deviceInfo;
+    config.dwOutSize = sizeof(NET_EHOME_DEVICE_INFO);
+    
+    if (NET_ECMS_GetDevConfig(lUserID, NET_EHOME_GET_DEVICE_INFO, &config, sizeof(NET_EHOME_CONFIG))) {
+        std::string info;
         
-    // Find the device in our map
-    auto it = g_deviceMap.find(iPreviewHandle);
-    if (it != g_deviceMap.end()) {
-        // Update last data time
-        it->second.lastDataTime = time(NULL);
-    }
-    
-    // Handle different types of data
-    switch (pPreviewCBMsg->byDataType)
-    {
-        case NET_EHOME_SYSHEAD:  // Stream header
-            std::cout << "Received stream header, length: " << pPreviewCBMsg->dwDataLen << " bytes\n";
-            break;
-            
-        case NET_EHOME_STREAMDATA:  // Stream data
-            // Only log occasionally to avoid flooding the console
-            if (pPreviewCBMsg->dwDataLen % 1000 == 0) {
-                std::cout << "Received stream data, length: " << pPreviewCBMsg->dwDataLen << " bytes\n";
-            }
-            break;
-            
-        case NET_EHOME_STREAMEND:  // End of stream
-            std::cout << "Stream ended\n";
-            
-            // Update device status
-            if (it != g_deviceMap.end()) {
-                it->second.isStreaming = false;
-            }
-            break;
-            
-        default:
-            std::cout << "Unknown data type: " << (int)pPreviewCBMsg->byDataType << "\n";
-            break;
-    }
-}
-
-// Callback function for handling new connections
-BOOL CALLBACK PreviewNewLinkCB(LONG iLinkHandle, NET_EHOME_NEWLINK_CB_MSG *pNewLinkCBMsg, void *pUserData)
-{
-    if (pNewLinkCBMsg == NULL)
-    {
-        std::cout << "Error: New link callback message is NULL!\n";
-        return FALSE;
-    }
-
-    std::cout << "New connection established!\n";
-    
-    // Step 1: Store device information
-    DeviceInfo info;
-    info.deviceID = reinterpret_cast<char*>(pNewLinkCBMsg->szDeviceID);
-    info.serialNumber = pNewLinkCBMsg->sDeviceSerial;
-    info.sessionID = pNewLinkCBMsg->iSessionID;
-    info.channelNo = pNewLinkCBMsg->dwChannelNo;
-    info.streamType = pNewLinkCBMsg->byStreamType;
-    info.streamFormat = pNewLinkCBMsg->byStreamFormat;
-    info.isStreaming = true;
-    info.lastDataTime = time(NULL);
-    
-    // Step 2: Display detailed device information
-    DisplayDeviceInfo(info);
-    
-    // Step 3: Store in global map
-    g_deviceMap[iLinkHandle] = info;
-
-    // Step 4: Set up callback to receive data from this connection
-    NET_EHOME_PREVIEW_DATA_CB_PARAM struDataCBParam;
-    memset(&struDataCBParam, 0, sizeof(struDataCBParam));
-    
-    // Set the callback for stream data
-    struDataCBParam.fnPreviewDataCB = PreviewDataCallback;
-    struDataCBParam.pUserData = NULL;
-    struDataCBParam.byStreamFormat = pNewLinkCBMsg->byStreamFormat; // Use the device's stream format
-    
-    // Register the callback to receive data
-    if (!NET_ESTREAM_SetPreviewDataCB(iLinkHandle, &struDataCBParam))
-    {
-        std::cout << "Failed to set preview data callback! Error: " << NET_ESTREAM_GetLastError() << "\n";
-        g_deviceMap.erase(iLinkHandle);
-        return FALSE;
-    }
-    
-    std::cout << "Successfully registered data callback for device " << info.deviceID << "\n";
-    return TRUE;
-}
-
-// Function to display a summary of all connected devices
-void DisplayConnectedDevices()
-{
-    if (g_deviceMap.empty()) {
-        std::cout << "No devices connected.\n";
-        return;
-    }
-    
-    std::cout << "\n======== CONNECTED DEVICES SUMMARY ========\n";
-    std::cout << "Total connected devices: " << g_deviceMap.size() << "\n\n";
-    
-    int index = 1;
-    time_t currentTime = time(NULL);
-    
-    for (const auto& pair : g_deviceMap) {
-        const auto& device = pair.second;
-        std::cout << "Device " << index++ << ":\n";
-        std::cout << "  Device ID: " << device.deviceID << "\n";
-        std::cout << "  Serial Number: " << device.serialNumber << "\n";
-        std::cout << "  Channel: " << device.channelNo << "\n";
-        std::cout << "  Status: " << (device.isStreaming ? "Streaming" : "Not streaming") << "\n";
-        std::cout << "  Last data received: " << difftime(currentTime, device.lastDataTime) << " seconds ago\n\n";
-    }
-    std::cout << "===========================================\n";
-}
-
-int main(int argc, char* argv[])
-{
-    // Check command line arguments
-    if (argc < 2)
-    {
-        std::cout << "Usage: " << argv[0] << " <listen_port>\n";
-        return -1;
-    }
-    
-    int listenPort = atoi(argv[1]);
-    
-    // Set up signal handler for graceful termination
-    signal(SIGINT, SignalHandler);
-    signal(SIGTERM, SignalHandler);
-    
-    // Step 1: Initialize the SDK
-    std::cout << "Initializing Hikvision SDK...\n";
-    if (!NET_ESTREAM_Init())
-    {
-        std::cout << "Failed to initialize the SDK! Error: " << NET_ESTREAM_GetLastError() << "\n";
-        return -1;
-    }
-    
-    // Step 2: Set log file
-    if (!NET_ESTREAM_SetLogToFile(3, const_cast<char*>("./logs"), TRUE))
-    {
-        std::cout << "Failed to set log file! Error: " << NET_ESTREAM_GetLastError() << "\n";
-        // Continue anyway - non-critical
-    }
-    
-    // Step 3: Configure and start the preview listener
-    std::cout << "Configuring preview listener...\n";
-    NET_EHOME_LISTEN_PREVIEW_CFG struPreviewListenParam;
-    memset(&struPreviewListenParam, 0, sizeof(struPreviewListenParam));
-    
-    // Set the listening IP to 0.0.0.0 (all interfaces)
-    strcpy(struPreviewListenParam.struIPAdress.szIP, "0.0.0.0");
-    struPreviewListenParam.struIPAdress.wPort = listenPort;
-    
-    // Set connection callback
-    struPreviewListenParam.fnNewLinkCB = PreviewNewLinkCB;
-    struPreviewListenParam.byLinkMode = 0;  // TCP mode
-    
-    // Start listening for preview connections
-    std::cout << "Starting preview listener...\n";
-    g_lListenHandle = NET_ESTREAM_StartListenPreview(&struPreviewListenParam);
-    if (g_lListenHandle < 0)
-    {
-        std::cout << "Failed to start preview listener! Error: " << NET_ESTREAM_GetLastError() << "\n";
-        NET_ESTREAM_Fini();
-        return -1;
-    }
-    
-    std::cout << "Started preview listener on port " << listenPort << "\n";
-    std::cout << "Waiting for connections... (Press Ctrl+C to exit)\n";
-    
-    // Main loop
-    int deviceCheckCounter = 0;
-    while (!g_bExit)
-    {
-        // Sleep to avoid CPU usage
-        sleep(1);
+        // Add fields to info string
+        info = "Channels: " + std::to_string(deviceInfo.dwChannelNumber) + "\n";
+        info += "Total Channels: " + std::to_string(deviceInfo.dwChannelAmount) + "\n";
+        info += "Device Type: " + std::to_string(deviceInfo.dwDevType) + "\n";
+        info += "Disk Number: " + std::to_string(deviceInfo.dwDiskNumber) + "\n";
         
-        // Periodically display connected devices summary (every 30 seconds)
-        if (++deviceCheckCounter >= 30) {
-            DisplayConnectedDevices();
-            deviceCheckCounter = 0;
-        }
+        // Format serial number
+        char serialNumber[MAX_SERIALNO_LEN + 1] = {0};
+        memcpy(serialNumber, deviceInfo.sSerialNumber, MAX_SERIALNO_LEN);
+        info += "Serial Number: " + std::string(serialNumber) + "\n";
+        
+        info += "Alarm In Ports: " + std::to_string(deviceInfo.dwAlarmInPortNum) + "\n";
+        info += "Alarm Out Ports: " + std::to_string(deviceInfo.dwAlarmOutPortNum) + "\n";
+        info += "Start Channel: " + std::to_string(deviceInfo.dwStartChannel) + "\n";
+        info += "Audio Channels: " + std::to_string(deviceInfo.dwAudioChanNum) + "\n";
+        info += "Max Digital Channels: " + std::to_string(deviceInfo.dwMaxDigitChannelNum) + "\n";
+        info += "Audio Encoding Type: " + std::to_string(deviceInfo.dwAudioEncType) + "\n";
+        info += "Zero Channels Support: " + std::to_string(deviceInfo.dwSupportZeroChan);
+        
+        printBoxedInfo("DETAILED DEVICE INFORMATION", info);
+    } else {
+        std::cout << "Failed to get detailed device information. Error code: " 
+                  << NET_ECMS_GetLastError() << std::endl;
     }
     
-    // Cleanup all connections
-    std::cout << "Cleaning up and exiting...\n";
-    for (const auto& pair : g_deviceMap) {
-        NET_ESTREAM_StopPreview(pair.first);
-    }
-    g_deviceMap.clear();
+    // Get version info
+    NET_EHOME_VERSION_INFO versionInfo = {0};
+    versionInfo.dwSize = sizeof(NET_EHOME_VERSION_INFO);
     
-    // Stop listening
-    if (g_lListenHandle >= 0)
-    {
-        NET_ESTREAM_StopListenPreview(g_lListenHandle);
-        g_lListenHandle = -1;
+    config.pOutBuf = &versionInfo;
+    config.dwOutSize = sizeof(NET_EHOME_VERSION_INFO);
+    
+    if (NET_ECMS_GetDevConfig(lUserID, NET_EHOME_GET_VERSION_INFO, &config, sizeof(NET_EHOME_CONFIG))) {
+        std::string info;
+        
+        // Format software version
+        char softwareVersion[MAX_VERSION_LEN + 1] = {0};
+        memcpy(softwareVersion, versionInfo.sSoftwareVersion, MAX_VERSION_LEN);
+        info = "Software Version: " + std::string(softwareVersion) + "\n";
+        
+        // Format DSP software version
+        char dspVersion[MAX_VERSION_LEN + 1] = {0};
+        memcpy(dspVersion, versionInfo.sDSPSoftwareVersion, MAX_VERSION_LEN);
+        info += "DSP Version: " + std::string(dspVersion) + "\n";
+        
+        // Format panel version
+        char panelVersion[MAX_VERSION_LEN + 1] = {0};
+        memcpy(panelVersion, versionInfo.sPanelVersion, MAX_VERSION_LEN);
+        info += "Panel Version: " + std::string(panelVersion) + "\n";
+        
+        // Format hardware version
+        char hardwareVersion[MAX_VERSION_LEN + 1] = {0};
+        memcpy(hardwareVersion, versionInfo.sHardwareVersion, MAX_VERSION_LEN);
+        info += "Hardware Version: " + std::string(hardwareVersion);
+        
+        printBoxedInfo("VERSION INFORMATION", info);
+    } else {
+        std::cout << "Failed to get version information. Error code: " 
+                  << NET_ECMS_GetLastError() << std::endl;
+    }
+}
+
+// Main function
+int main() {
+    // Initialize the SDK
+    if (!NET_ECMS_Init()) {
+        std::cout << "Failed to initialize HikVision SDK. Error code: " 
+                  << NET_ECMS_GetLastError() << std::endl;
+        return -1;
     }
     
-    // Uninitialize SDK
-    NET_ESTREAM_Fini();
-    std::cout << "Application terminated normally.\n";
+    std::cout << "HikVision SDK initialized successfully." << std::endl;
+    
+    // Set log parameters
+    NET_ECMS_SetLogToFile(3, const_cast<char*>("./logs"), TRUE);
+    
+    // Setup listen parameters for device registration
+    NET_EHOME_CMS_LISTEN_PARAM listenParam = {0};
+    
+    // Set the local IP and port to listen on
+    listenParam.struAddress.szIP[0] = 0; // 0.0.0.0 means all interfaces
+    listenParam.struAddress.szIP[1] = 0;
+    listenParam.struAddress.szIP[2] = 0;
+    listenParam.struAddress.szIP[3] = 0;
+    listenParam.struAddress.wPort = 7660; // Standard Hikvision ISUP port
+    
+    // Set the callback function
+    listenParam.fnCB = DeviceRegisterCallback;
+    
+    // Start listening for device connections
+    LONG listenHandle = NET_ECMS_StartListen(&listenParam);
+    
+    if (listenHandle < 0) {
+        std::cout << "Failed to start listening for device connections. Error code: " 
+                  << NET_ECMS_GetLastError() << std::endl;
+        NET_ECMS_Fini();
+        return -1;
+    }
+    
+    std::cout << "Listening for device connections on port 7660..." << std::endl;
+    std::cout << "Press Enter to exit." << std::endl;
+    
+    // Wait for user input to exit
+    std::cin.get();
+    
+    // Stop listening and clean up
+    NET_ECMS_StopListen(listenHandle);
+    NET_ECMS_Fini();
+    
+    std::cout << "Application exited." << std::endl;
     
     return 0;
 }
+
+// Device registration callback function
+BOOL CALLBACK DeviceRegisterCallback(LONG lUserID, DWORD dwDataType, void *pOutBuffer, DWORD dwOutLen, 
+                                     void *pInBuffer, DWORD dwInLen, void *pUser) {
+    if (dwDataType == ENUM_DEV_ON) {
+        // Device is online
+        if (pOutBuffer != nullptr && dwOutLen == sizeof(NET_EHOME_DEV_REG_INFO)) {
+            NET_EHOME_DEV_REG_INFO *pDevInfo = (NET_EHOME_DEV_REG_INFO*)pOutBuffer;
+            
+            // Print device info in a nice format
+            prettyPrintDeviceInfo(*pDevInfo);
+            
+            // Get and print detailed device information
+            std::thread([lUserID]() {
+                // Wait a bit for the device to fully register
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                getDeviceDetailedInfo(lUserID);
+            }).detach();
+            
+            // Set server info for the connected device
+            NET_EHOME_SERVER_INFO serverInfo = {0};
+            serverInfo.dwSize = sizeof(NET_EHOME_SERVER_INFO);
+            serverInfo.dwAlarmServerType = 1; // Support TCP and UDP
+            serverInfo.dwKeepAliveSec = 15;   // 15 seconds keep-alive
+            
+            // Set alarm server address (same as CMS)
+            serverInfo.struTCPAlarmSever.szIP[0] = 0;
+            serverInfo.struTCPAlarmSever.szIP[1] = 0;
+            serverInfo.struTCPAlarmSever.szIP[2] = 0;
+            serverInfo.struTCPAlarmSever.szIP[3] = 0;
+            serverInfo.struTCPAlarmSever.wPort = 7660;
+            
+            // Set alarm server info
+            NET_EHOME_CONFIG config = {0};
+            config.pInBuf = &serverInfo;
+            config.dwInSize = sizeof(NET_EHOME_SERVER_INFO);
+            
+            if (!NET_ECMS_SetDevConfig(lUserID, NET_EHOME_SET_SERVER_INFO, &config, sizeof(NET_EHOME_CONFIG))) {
+                std::cout << "Failed to set server info. Error code: " 
+                          << NET_ECMS_GetLastError() << std::endl;
+            }
+            
+            return TRUE;
+        }
+    } else if (dwDataType == ENUM_DEV_OFF) {
+        // Device went offline
+        std::cout << "Device disconnected. User ID: " << lUserID << std::endl;
+        return TRUE;
+    } else if (dwDataType == ENUM_DEV_ADDRESS_CHANGED) {
+        // Device address changed
+        std::cout << "Device address changed. User ID: " << lUserID << std::endl;
+        return TRUE;
+    }
+    
+    return FALSE;
+} 

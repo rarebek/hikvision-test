@@ -1,119 +1,89 @@
-# Hikvision Video Streaming Example
+# Hikvision Device Info
 
-This is a simple example application demonstrating how to receive video streams from Hikvision cameras using the Hikvision EHome SDK.
+This application connects to Hikvision devices using the ISUP protocol and displays detailed device information when a device connects.
+
+## Features
+
+- Listens for Hikvision device connections using the ISUP protocol
+- Displays detailed device information when a device connects
+- Pretty-prints the device information in a formatted box
+- Shows both basic and detailed device information
+- Supports device online/offline detection
 
 ## Prerequisites
 
-- Linux operating system
-- GCC/G++ compiler
-- Hikvision EHome SDK (included in the `hikvision_sdk` directory)
-- Hikvision IP cameras or network video recorders that support the EHome protocol
-- CMake (optional, for easier building)
+- CMake 3.10 or higher
+- C++11 compatible compiler
+- Hikvision SDK (included in the `/hikvision_sdk` directory)
 
 ## Building the Application
 
-### Using CMake (Recommended)
+1. Create a build directory and navigate to it:
 
 ```bash
-mkdir -p build
-cd build
-cmake ..
-make
+mkdir build && cd build
 ```
 
-This will build both examples:
-- `stream_viewer` - Basic example that displays stream information
-- `stream_saver` - Advanced example that saves streams to files
-
-### Manual Compilation
-
-If you prefer to compile manually:
+2. Generate the build files with CMake:
 
 ```bash
-# For the basic example
-mkdir -p logs
-g++ -o stream_viewer main.cpp -I. -L./hikvision_sdk/lib -lHCISUPStream -Wl,-rpath=./hikvision_sdk/lib
+cmake ..
+```
 
-# For the advanced example
-g++ -o stream_saver main_save_to_file.cpp -I. -L./hikvision_sdk/lib -lHCISUPStream -Wl,-rpath=./hikvision_sdk/lib
+3. Build the application:
+
+```bash
+make
 ```
 
 ## Running the Application
 
-### Basic Example
+The application listens on port 7660 by default for device connections:
 
 ```bash
-./stream_viewer <listen_port>
+./hikvision_device_info
 ```
 
-Where `<listen_port>` is the port number you want the application to listen on (e.g., 8000).
-
-This example will display information about received streams but does not save them.
-
-### Advanced Example (Save to File)
-
-```bash
-./stream_saver <listen_port>
+The application will start and display:
+```
+HikVision SDK initialized successfully.
+Listening for device connections on port 7660...
+Press Enter to exit.
 ```
 
-This example saves each stream to a separate file named `stream_<deviceID>_channel_<channelNumber>.ps`. The PS format can be played with media players like VLC.
+## Configuring Hikvision Devices
 
-## How It Works
-
-This application:
-
-1. Initializes the Hikvision SDK
-2. Sets up a listener on the specified port
-3. Waits for Hikvision devices to connect and send video streams
-4. Processes the incoming video stream data through callbacks
-5. Either displays information about the stream data (basic example) or saves it to a file (advanced example)
-
-## Device Configuration
-
-For Hikvision cameras or NVRs to connect to this application, you need to configure them:
+To connect your Hikvision devices to this application, you need to configure them to use the ISUP protocol:
 
 1. Access the device's web interface
-2. Navigate to Configuration → Network → Advanced Settings → Platform Access
-3. Enable EHome protocol
-4. Set the Server IP to the IP address of the computer running this application
-5. Set the Server Port to the port number specified when running the application
-6. Save the settings
+2. Go to Configuration > Network > Advanced Settings > Platform Access
+3. Enable ISUP protocol
+4. Set the following parameters:
+   - Server Address: [IP of the computer running this application]
+   - Server Port: 7660
+   - Device ID: [Unique ID for this device]
+5. Click Save
 
-## Working with the Saved Files
+## Output Format
 
-The saved files are in PS (Program Stream) format, which can be played with:
+When a device connects, the application will display information in a formatted box like:
 
-- VLC Media Player
-- FFmpeg
-- FFplay
-
-Example with FFplay:
-```bash
-ffplay stream_DEVICE123_channel_1.ps
+```
++------------------------------------------------------------+
+|                      DEVICE CONNECTED                      |
+|                                                            |
+| Device ID: SAMPLE_DEVICE_123                               |
+| Firmware Version: V1.2.3                                   |
+| Serial Number: DS-2CD2142FWD-I20170123AACH123456789       |
+| Device Type: 30                                            |
+| Manufacturer: 1                                            |
+| IP Address: 192.168.1.100                                  |
+| Port: 8000                                                 |
++------------------------------------------------------------+
 ```
 
-Example with VLC:
-```bash
-vlc stream_DEVICE123_channel_1.ps
-```
+Followed by detailed device information.
 
-You can also convert the PS file to MP4 or other formats using FFmpeg:
-```bash
-ffmpeg -i stream_DEVICE123_channel_1.ps -c copy output.mp4
-```
+## License
 
-## Notes
-
-- The basic example only prints information about the received video data
-- The advanced example saves the raw data to files
-- To terminate either application gracefully, press Ctrl+C
-- The SDK supports multiple simultaneous connections from different devices or channels
-
-## Troubleshooting
-
-- Check that the library path is correctly set
-- Ensure the device is correctly configured to use the EHome protocol
-- Verify network connectivity between the device and the computer
-- Check firewall settings to ensure the port is accessible
-- Make sure you have write permissions for the directory where you're running the application (for the file-saving example)
-- If streams are not saving correctly, check disk space and permissions 
+This project uses Hikvision SDK which is subject to Hikvision's licensing terms. 
