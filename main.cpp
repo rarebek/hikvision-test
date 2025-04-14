@@ -2,30 +2,40 @@
 #include <iomanip>
 #include <string>
 #include <cstring>
-#include <functional>
 #include <thread>
 #include <chrono>
+#include <mutex>
+#include <condition_variable>
+#include <fstream>
+#include <atomic>
+#include <ctime>
 
 // Hikvision SDK headers
 #include "HCISUPPublic.h"
 #include "HCISUPCMS.h"
+#include "HCISUPStream.h"
 
-// Define commands that might not be in SDK headers
-// Note: These use the actual values from HCISUPCMS.h
-//#define NET_EHOME_GET_DEVICE_INFO      1    // Already defined in SDK
-//#define NET_EHOME_GET_VERSION_INFO     2    // Already defined in SDK
-#define NET_EHOME_SET_SERVER_INFO      3    // Use this value instead of 0x2000
+// Global variables for recording
+std::ofstream g_recordFile;
+std::atomic<bool> g_isRecording(false);
+std::chrono::time_point<std::chrono::system_clock> g_recordStartTime;
+std::mutex g_mtx;
+std::condition_variable g_cv;
+bool g_exitApp = false;
 
 // Device registration callback
 BOOL CALLBACK DeviceRegisterCallback(LONG lUserID, DWORD dwDataType, void *pOutBuffer, DWORD dwOutLen, 
                                      void *pInBuffer, DWORD dwInLen, void *pUser);
+
+// Preview data callback
+void CALLBACK PreviewDataCallback(LONG iPreviewHandle, NET_EHOME_PREVIEW_CB_MSG *pPreviewCBMsg, void *pUserData);
 
 // Function to print box with borders
 void printBoxedInfo(const std::string& title, const std::string& content) {
     int width = 60;
     std::string border(width, '-');
     
-    std::cout << "+" << border << "+" << std::endl;
+    std::cout << "\n+" << border << "+" << std::endl;
     
     // Print title centered
     int spaces = (width - title.length()) / 2;
@@ -110,55 +120,93 @@ void getDeviceDetailedInfo(LONG lUserID) {
         info += "Alarm In Ports: " + std::to_string(deviceInfo.dwAlarmInPortNum) + "\n";
         info += "Alarm Out Ports: " + std::to_string(deviceInfo.dwAlarmOutPortNum) + "\n";
         info += "Start Channel: " + std::to_string(deviceInfo.dwStartChannel) + "\n";
-        info += "Audio Channels: " + std::to_string(deviceInfo.dwAudioChanNum) + "\n";
-        info += "Max Digital Channels: " + std::to_string(deviceInfo.dwMaxDigitChannelNum) + "\n";
-        info += "Audio Encoding Type: " + std::to_string(deviceInfo.dwAudioEncType) + "\n";
-        info += "Zero Channels Support: " + std::to_string(deviceInfo.dwSupportZeroChan);
+        info += "Audio Channels: " + std::to_string(deviceInfo.dwAudioChanNum);
         
         printBoxedInfo("DETAILED DEVICE INFORMATION", info);
     } else {
         std::cout << "Failed to get detailed device information. Error code: " 
                   << NET_ECMS_GetLastError() << std::endl;
     }
-    
-    // Get version info
-    NET_EHOME_VERSION_INFO versionInfo = {0};
-    versionInfo.dwSize = sizeof(NET_EHOME_VERSION_INFO);
-    
-    config.pOutBuf = &versionInfo;
-    config.dwOutSize = sizeof(NET_EHOME_VERSION_INFO);
-    
-    if (NET_ECMS_GetDevConfig(lUserID, NET_EHOME_GET_VERSION_INFO, &config, sizeof(NET_EHOME_CONFIG))) {
-        std::string info;
-        
-        // Format software version
-        char softwareVersion[MAX_VERSION_LEN + 1] = {0};
-        memcpy(softwareVersion, versionInfo.sSoftwareVersion, MAX_VERSION_LEN);
-        info = "Software Version: " + std::string(softwareVersion) + "\n";
-        
-        // Format DSP software version
-        char dspVersion[MAX_VERSION_LEN + 1] = {0};
-        memcpy(dspVersion, versionInfo.sDSPSoftwareVersion, MAX_VERSION_LEN);
-        info += "DSP Version: " + std::string(dspVersion) + "\n";
-        
-        // Format panel version
-        char panelVersion[MAX_VERSION_LEN + 1] = {0};
-        memcpy(panelVersion, versionInfo.sPanelVersion, MAX_VERSION_LEN);
-        info += "Panel Version: " + std::string(panelVersion) + "\n";
-        
-        // Format hardware version
-        char hardwareVersion[MAX_VERSION_LEN + 1] = {0};
-        memcpy(hardwareVersion, versionInfo.sHardwareVersion, MAX_VERSION_LEN);
-        info += "Hardware Version: " + std::string(hardwareVersion);
-        
-        printBoxedInfo("VERSION INFORMATION", info);
-    } else {
-        std::cout << "Failed to get version information. Error code: " 
-                  << NET_ECMS_GetLastError() << std::endl;
-    }
 }
 
-// Main function
+// Function to start recording from a device
+void startRecording(LONG lUserID, const char* deviceID) {
+    // Create a filename with timestamp
+    char filename[128] = {0};
+    time_t now = time(NULL);
+    struct tm* timeinfo = localtime(&now);
+    sprintf(filename, "recording_%s_%04d%02d%02d_%02d%02d%02d.mp4", 
+            deviceID,
+            timeinfo->tm_year + 1900, 
+            timeinfo->tm_mon + 1, 
+            timeinfo->tm_mday,
+            timeinfo->tm_hour, 
+            timeinfo->tm_min, 
+            timeinfo->tm_sec);
+    
+    // Open file for writing
+    g_recordFile.open(filename, std::ios::binary);
+    if (!g_recordFile.is_open()) {
+        std::cout << "Failed to open file for recording: " << filename << std::endl;
+        return;
+    }
+    
+    printBoxedInfo("RECORDING STARTED", "Recording to: " + std::string(filename));
+    
+    // Initialize stream library
+    if (!NET_ESTREAM_Init()) {
+        std::cout << "Failed to initialize stream library. Error: " << NET_ESTREAM_GetLastError() << std::endl;
+        g_recordFile.close();
+        return;
+    }
+    
+    // Set preview callback function
+    NET_EHOME_PREVIEW_DATA_CB_PARAM previewCBParam = {0};
+    previewCBParam.fnPreviewDataCB = PreviewDataCallback;
+    previewCBParam.byStreamFormat = 0; // PS format
+    
+    // Set start time
+    g_recordStartTime = std::chrono::system_clock::now();
+    g_isRecording = true;
+    
+    // Start preview
+    NET_EHOME_PREVIEWINFO_IN previewInfoIn = {0};
+    NET_EHOME_PREVIEWINFO_OUT previewInfoOut = {0};
+    
+    previewInfoIn.iChannel = 1; // First channel
+    previewInfoIn.dwStreamType = 0; // Main stream
+    previewInfoIn.dwLinkMode = 0; // TCP mode
+    
+    if (!NET_ECMS_StartGetRealStream(lUserID, &previewInfoIn, &previewInfoOut)) {
+        std::cout << "Failed to start preview. Error: " << NET_ECMS_GetLastError() << std::endl;
+        g_recordFile.close();
+        g_isRecording = false;
+        NET_ESTREAM_Fini();
+        return;
+    }
+    
+    // Record for 5 seconds
+    std::thread([lUserID, previewInfoOut]() {
+        // Wait for 5 seconds
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+        
+        // Stop recording
+        g_isRecording = false;
+        
+        // Stop stream
+        NET_ECMS_StopGetRealStream(lUserID, previewInfoOut.lSessionID);
+        
+        // Close file
+        if (g_recordFile.is_open()) {
+            g_recordFile.close();
+            printBoxedInfo("RECORDING COMPLETE", "Video has been saved to file.");
+        }
+        
+        // Cleanup
+        NET_ESTREAM_Fini();
+    }).detach();
+}
+
 int main() {
     // Initialize the SDK
     if (!NET_ECMS_Init()) {
@@ -172,13 +220,11 @@ int main() {
     // Set log parameters
     NET_ECMS_SetLogToFile(3, const_cast<char*>("./logs"), TRUE);
     
-    // Set device authentication keys - match these with your device configuration
+    // Setup authentication for device (if needed)
     NET_EHOME_DEV_SESSIONKEY deviceKey = {0};
-    strcpy((char*)deviceKey.sDeviceID, "k26311722"); // Use your device ID
-    strcpy((char*)deviceKey.sSessionKey, "12345");   // Use your verification code here
-    NET_ECMS_SetDeviceSessionKey(&deviceKey);
-    
-    printBoxedInfo("AUTHENTICATION SETUP", "Configured authentication for device: k26311722");
+    // strcpy reinterpret_cast<char*>(deviceKey.sDeviceID), "your_device_id"); // Uncomment if needed
+    // strcpy reinterpret_cast<char*>(deviceKey.sSessionKey), "verification_code"); // Uncomment if needed
+    // NET_ECMS_SetDeviceSessionKey(&deviceKey); // Uncomment if needed
     
     // Setup listen parameters for device registration
     NET_EHOME_CMS_LISTEN_PARAM listenParam = {0};
@@ -192,6 +238,7 @@ int main() {
     
     // Set the callback function
     listenParam.fnCB = DeviceRegisterCallback;
+    listenParam.pUserData = NULL;
     
     // Start listening for device connections
     LONG listenHandle = NET_ECMS_StartListen(&listenParam);
@@ -206,8 +253,9 @@ int main() {
     std::cout << "Listening for device connections on port 7660..." << std::endl;
     std::cout << "Press Enter to exit." << std::endl;
     
-    // Wait for user input to exit
-    std::cin.get();
+    // Wait for user input or exit signal
+    std::unique_lock<std::mutex> lock(g_mtx);
+    g_cv.wait(lock, []{ return g_exitApp || std::cin.get() == '\n'; });
     
     // Stop listening and clean up
     NET_ECMS_StopListen(listenHandle);
@@ -216,6 +264,24 @@ int main() {
     std::cout << "Application exited." << std::endl;
     
     return 0;
+}
+
+// Preview data callback function
+void CALLBACK PreviewDataCallback(LONG iPreviewHandle, NET_EHOME_PREVIEW_CB_MSG *pPreviewCBMsg, void *pUserData) {
+    if (pPreviewCBMsg == NULL || !g_isRecording || !g_recordFile.is_open()) {
+        return;
+    }
+    
+    // Write data to file
+    if (pPreviewCBMsg->byDataType == NET_EHOME_SYSHEAD || pPreviewCBMsg->byDataType == NET_EHOME_STREAMDATA) {
+        g_recordFile.write(static_cast<char*>(pPreviewCBMsg->pRecvdata), pPreviewCBMsg->dwDataLen);
+        
+        // Check if recording time exceeded
+        auto currentTime = std::chrono::system_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - g_recordStartTime).count() >= 5) {
+            g_isRecording = false;
+        }
+    }
 }
 
 // Device registration callback function
@@ -229,12 +295,8 @@ BOOL CALLBACK DeviceRegisterCallback(LONG lUserID, DWORD dwDataType, void *pOutB
             // Print device info in a nice format
             prettyPrintDeviceInfo(*pDevInfo);
             
-            // Get and print detailed device information
-            std::thread([lUserID]() {
-                // Wait a bit for the device to fully register
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-                getDeviceDetailedInfo(lUserID);
-            }).detach();
+            // Get detailed device information
+            getDeviceDetailedInfo(lUserID);
             
             // Set server info for the connected device
             NET_EHOME_SERVER_INFO serverInfo = {0};
@@ -254,25 +316,38 @@ BOOL CALLBACK DeviceRegisterCallback(LONG lUserID, DWORD dwDataType, void *pOutB
             config.pInBuf = &serverInfo;
             config.dwInSize = sizeof(NET_EHOME_SERVER_INFO);
             
-            if (!NET_ECMS_SetDevConfig(lUserID, NET_EHOME_SET_SERVER_INFO, &config, sizeof(NET_EHOME_CONFIG))) {
+            if (!NET_ECMS_SetDevConfig(lUserID, 3 /*NET_EHOME_SET_SERVER_INFO*/, &config, sizeof(NET_EHOME_CONFIG))) {
                 std::cout << "Failed to set server info. Error code: " 
                           << NET_ECMS_GetLastError() << std::endl;
             }
             else {
-                // Print success message in a nice box
                 printBoxedInfo("CONNECTION SUCCESS", 
-                    "Device ID: " + std::string((char*)pDevInfo->byDeviceID) + "\n" +
+                    "Device ID: " + std::string(reinterpret_cast<char*>(pDevInfo->byDeviceID)) + "\n" +
                     "Server info configured successfully\n" +
                     "Connection established and ready");
+                
+                // Start recording from this device
+                std::thread([lUserID, pDevInfo]() {
+                    // Wait a moment to ensure device is fully registered
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                    
+                    char deviceID[MAX_DEVICE_ID_LEN + 1] = {0};
+                    memcpy(deviceID, pDevInfo->byDeviceID, MAX_DEVICE_ID_LEN);
+                    
+                    // Start recording
+                    startRecording(lUserID, deviceID);
+                }).detach();
             }
             
             return TRUE;
         }
-    } else if (dwDataType == ENUM_DEV_OFF) {
+    } 
+    else if (dwDataType == ENUM_DEV_OFF) {
         // Device went offline
         std::cout << "Device disconnected. User ID: " << lUserID << std::endl;
         return TRUE;
-    } else if (dwDataType == ENUM_DEV_ADDRESS_CHANGED) {
+    } 
+    else if (dwDataType == ENUM_DEV_ADDRESS_CHANGED) {
         // Device address changed
         std::cout << "Device address changed. User ID: " << lUserID << std::endl;
         return TRUE;
